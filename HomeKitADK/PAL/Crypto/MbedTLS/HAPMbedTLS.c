@@ -24,17 +24,17 @@
 
 static void sha512_init(mbedtls_sha512_context* ctx) {
     mbedtls_sha512_init(ctx);
-    int ret = mbedtls_sha512_starts_ret(ctx, 0);
+    int ret = mbedtls_sha512_starts(ctx, 0);
     HAPAssert(ret == 0);
 }
 
 static void sha512_update(mbedtls_sha512_context* ctx, const uint8_t* data, size_t size) {
-    int ret = mbedtls_sha512_update_ret(ctx, data, size);
+    int ret = mbedtls_sha512_update(ctx, data, size);
     HAPAssert(ret == 0);
 }
 
 static void sha512_final(mbedtls_sha512_context* ctx, uint8_t md[SHA512_BYTES]) {
-    int ret = mbedtls_sha512_finish_ret(ctx, md);
+    int ret = mbedtls_sha512_finish(ctx, md);
     HAPAssert(ret == 0);
     mbedtls_sha512_free(ctx);
 }
@@ -119,9 +119,9 @@ void HAP_X25519_scalarmult(
         int ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_CURVE25519, &our_key, n, X25519_SCALAR_BYTES);
         HAPAssert(ret == 0);
         WITH_ECP_KEYPAIR(their_key, {
-            ret = mbedtls_ecp_group_load(&their_key.grp, MBEDTLS_ECP_DP_CURVE25519);
+            ret = mbedtls_ecp_group_load(&their_key.private_grp, MBEDTLS_ECP_DP_CURVE25519);
             HAPAssert(ret == 0);
-            ret = mbedtls_ecp_point_read_binary(&their_key.grp, &their_key.Q, p, X25519_BYTES);
+            ret = mbedtls_ecp_point_read_binary(&their_key.private_grp, &their_key.private_Q, p, X25519_BYTES);
             HAPAssert(ret == 0);
             WITH_ECDH(ecdh, {
                 ret = mbedtls_ecdh_get_params(&ecdh, &their_key, MBEDTLS_ECDH_THEIRS);
@@ -141,10 +141,10 @@ void HAP_X25519_scalarmult_base(uint8_t r[X25519_BYTES], const uint8_t n[X25519_
     WITH_ECP_KEYPAIR(key, {
         int ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_CURVE25519, &key, n, X25519_SCALAR_BYTES);
         HAPAssert(ret == 0);
-        ret = mbedtls_ecp_mul(&key.grp, &key.Q, &key.d, &key.grp.G, blinding_rng, NULL);
+        ret = mbedtls_ecp_mul(&key.private_grp, &key.private_Q, &key.private_d, &key.private_grp.G, blinding_rng, NULL);
         HAPAssert(ret == 0);
         size_t out_len;
-        ret = mbedtls_ecp_point_write_binary(&key.grp, &key.Q, MBEDTLS_ECP_PF_UNCOMPRESSED, &out_len, r, X25519_BYTES);
+        ret = mbedtls_ecp_point_write_binary(&key.private_grp, &key.private_Q, MBEDTLS_ECP_PF_UNCOMPRESSED, &out_len, r, X25519_BYTES);
         HAPAssert(ret == 0);
         HAPAssert(out_len == X25519_BYTES);
     });
@@ -216,21 +216,21 @@ static const uint8_t k_data_le[SHA512_BYTES] ALIGN_BN_LIMB = {
 };
 
 static const mbedtls_mpi N = {
-    .s = 1,
-    .n = (sizeof(N_3072_data_le) / sizeof(mbedtls_mpi_uint)),
-    .p = (mbedtls_mpi_uint*) N_3072_data_le,
+    .private_s = 1,
+    .private_n = (sizeof(N_3072_data_le) / sizeof(mbedtls_mpi_uint)),
+    .private_p = (mbedtls_mpi_uint*) N_3072_data_le,
 };
 
 static const mbedtls_mpi g = {
-    .s = 1,
-    .n = 1,
-    .p = (mbedtls_mpi_uint*) g_3072_data_le,
+    .private_s = 1,
+    .private_n = 1,
+    .private_p = (mbedtls_mpi_uint*) g_3072_data_le,
 };
 
 static const mbedtls_mpi k = {
-    .s = 1,
-    .n = (sizeof(k_data_le) / sizeof(mbedtls_mpi_uint)),
-    .p = (mbedtls_mpi_uint*) k_data_le,
+    .private_s = 1,
+    .private_n = (sizeof(k_data_le) / sizeof(mbedtls_mpi_uint)),
+    .private_p = (mbedtls_mpi_uint*) k_data_le,
 };
 
 // Result of SHA512(N) ^ SHA512(g).
@@ -470,11 +470,11 @@ void HAP_srp_proof_m2(
 void HAP_sha1(uint8_t md[SHA1_BYTES], const uint8_t* data, size_t size) {
     mbedtls_sha1_context ctx;
     mbedtls_sha1_init(&ctx);
-    int ret = mbedtls_sha1_starts_ret(&ctx);
+    int ret = mbedtls_sha1_starts(&ctx);
     HAPAssert(ret == 0);
-    ret = mbedtls_sha1_update_ret(&ctx, data, size);
+    ret = mbedtls_sha1_update(&ctx, data, size);
     HAPAssert(ret == 0);
-    ret = mbedtls_sha1_finish_ret(&ctx, md);
+    ret = mbedtls_sha1_finish(&ctx, md);
     HAPAssert(ret == 0);
     mbedtls_sha1_free(&ctx);
 }
@@ -482,11 +482,11 @@ void HAP_sha1(uint8_t md[SHA1_BYTES], const uint8_t* data, size_t size) {
 void HAP_sha256(uint8_t md[SHA256_BYTES], const uint8_t* data, size_t size) {
     mbedtls_sha256_context ctx;
     mbedtls_sha256_init(&ctx);
-    int ret = mbedtls_sha256_starts_ret(&ctx, 0);
+    int ret = mbedtls_sha256_starts(&ctx, 0);
     HAPAssert(ret == 0);
-    ret = mbedtls_sha256_update_ret(&ctx, data, size);
+    ret = mbedtls_sha256_update(&ctx, data, size);
     HAPAssert(ret == 0);
-    ret = mbedtls_sha256_finish_ret(&ctx, md);
+    ret = mbedtls_sha256_finish(&ctx, md);
     HAPAssert(ret == 0);
     mbedtls_sha256_free(&ctx);
 }
@@ -543,15 +543,8 @@ void HAP_pbkdf2_hmac_sha1(
         const uint8_t* salt,
         size_t salt_len,
         uint32_t count) {
-    mbedtls_md_context_t ctx;
-    mbedtls_md_init(&ctx);
-    int ret = mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA1), 1);
+    int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, password, password_len, salt, salt_len, count, key_len, key);
     HAPAssert(ret == 0);
-    ret = mbedtls_md_starts(&ctx);
-    HAPAssert(ret == 0);
-    ret = mbedtls_pkcs5_pbkdf2_hmac(&ctx, password, password_len, salt, salt_len, count, key_len, key);
-    HAPAssert(ret == 0);
-    mbedtls_md_free(&ctx);
 }
 
 typedef struct {
